@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Авторизация</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      padding: 20px;
+    }
+
+    .auth-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 400px;
+      padding: 36px 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .auth-card h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0f172a;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .auth-card p.subtitle {
+      font-size: 14px;
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: #0f172a;
+      background-color: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .input-wrapper input:focus {
+      background-color: #ffffff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .toggle-pass-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      padding: 4px;
+    }
+
+    .toggle-pass-btn:hover {
+      color: #0f172a;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background-color: #2563eb;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: #334155;
+      border: 1.5px solid #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+      background-color: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .status-box {
+      margin-top: 18px;
+      padding: 10px 14px;
+      font-size: 13px;
+      border-radius: 6px;
+      display: none;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .status-box.error {
+      display: block;
+      background-color: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .status-box.success {
+      display: block;
+      background-color: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <h2>Вход в аккаунт</h2>
+    <p class="subtitle">Используйте Supabase Auth для доступа</p>
+
+    <div class="input-group">
+      <label for="userEmail">Электронная почта</label>
+      <div class="input-wrapper">
+        <input id="userEmail" type="email" placeholder="name@example.com" autocomplete="email">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label for="userPassword">Пароль</label>
+      <div class="input-wrapper">
+        <input id="userPassword" type="password" placeholder="Минимум 6 символов" autocomplete="current-password">
+        <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()">Показать</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="signInUser()">Войти</button>
+      <button class="btn btn-secondary" onclick="signUpUser()">Создать аккаунт</button>
+    </div>
+
+    <div id="statusMessage" class="status-box"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const client = supabase.createClient(
+      "https://jwylyajcetvgvuqdqnqf.supabase.co",
+      "sb_publishable_9dzgX863H-K9aH6gadGnew_23RKElSh"
+    );
+
+    function showStatus(text, type) {
+      const box = document.getElementById('statusMessage');
+      box.textContent = text;
+      box.className = 'status-box ' + type;
+    }
+
+    function togglePasswordVisibility() {
+      const passInput = document.getElementById('userPassword');
+      const toggleBtn = document.querySelector('.toggle-pass-btn');
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        toggleBtn.textContent = 'Скрыть';
+      } else {
+        passInput.type = 'password';
+        toggleBtn.textContent = 'Показать';
+      }
+    }
+
+    async function signUpUser() {
+      const email = document.getElementById('userEmail').value.trim();
+      const password = document.getElementById('userPassword').value.trim();
+
+      if (!email || !password) {
+        showStatus('Заполните email и пароль', 'error');
+        return;
+      }
+
+      showStatus('Регистрируем...', 'success');
+
+      const { data, error } = await client.auth.signUp({ email, password });
+
+      if (error) {
+        showStatus('Ошибка: ' + error.message, 'error');
+      } else {
+        showStatus('Аккаунт успешно создан! Теперь можно войти.', 'success');
+      }
+    }
+
+    async function signInUser() {
+      const email = document.getElementById('userEmail').value.trim();
+      const password = document.getElementById('userPassword').value.trim();
+
+      if (!email || !password) {
+        showStatus('Заполните email и пароль', 'error');
+        return;
+      }
+
+      showStatus('Проверяем данные...', 'success');
+
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        showStatus('Ошибка входа: ' + error.message, 'error');
+      } else {
+        showStatus('Вы успешно вошли! Добро пожаловать, ' + data.user.email, 'success');
+      }
+    }
+  </script>
+</body>
+</html>

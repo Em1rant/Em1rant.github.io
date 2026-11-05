@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Авторизация</title>
+  <title>Supabase Auth & DB Demo</title>
   <style>
     * {
       box-sizing: border-box;
@@ -18,42 +18,54 @@
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      padding: 20px;
+      padding: 24px;
     }
 
     .auth-card {
       background: #ffffff;
       width: 100%;
-      max-width: 400px;
-      padding: 36px 30px;
+      max-width: 440px;
+      padding: 32px 28px;
       border-radius: 16px;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
     }
 
     .auth-card h2 {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
       color: #0f172a;
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
-    .auth-card p.subtitle {
-      font-size: 14px;
+    .subtitle {
+      font-size: 13px;
       color: #64748b;
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #475569;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
     }
 
     .input-group {
-      margin-bottom: 18px;
+      margin-bottom: 12px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
     }
 
     .input-group label {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: #334155;
     }
@@ -66,8 +78,8 @@
 
     .input-wrapper input {
       width: 100%;
-      padding: 12px 14px;
-      font-size: 15px;
+      padding: 10px 12px;
+      font-size: 14px;
       color: #0f172a;
       background-color: #f8fafc;
       border: 1.5px solid #cbd5e1;
@@ -84,36 +96,35 @@
 
     .toggle-pass-btn {
       position: absolute;
-      right: 12px;
+      right: 10px;
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: #64748b;
       padding: 4px;
     }
 
-    .toggle-pass-btn:hover {
-      color: #0f172a;
-    }
-
-    .actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 24px;
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
     }
 
     .btn {
-      width: 100%;
-      padding: 12px;
-      font-size: 15px;
+      padding: 10px;
+      font-size: 13px;
       font-weight: 600;
       border-radius: 8px;
-      border: none;
+      border: 1px solid transparent;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
     .btn-primary {
@@ -123,27 +134,63 @@
 
     .btn-primary:hover {
       background-color: #1d4ed8;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 
     .btn-secondary {
-      background-color: transparent;
+      background-color: #f1f5f9;
       color: #334155;
-      border: 1.5px solid #cbd5e1;
+      border-color: #cbd5e1;
     }
 
     .btn-secondary:hover {
-      background-color: #f1f5f9;
-      border-color: #94a3b8;
+      background-color: #e2e8f0;
+    }
+
+    .btn-db {
+      background-color: #0f766e;
+      color: #ffffff;
+    }
+
+    .btn-db:hover {
+      background-color: #115e59;
+    }
+
+    .btn-db-outline {
+      background-color: #f0fdfa;
+      color: #0f766e;
+      border-color: #99f6e4;
+    }
+
+    .btn-db-outline:hover {
+      background-color: #ccfbf1;
+    }
+
+    .oauth-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .btn-oauth {
+      background-color: #ffffff;
+      color: #1e293b;
+      border: 1.5px solid #e2e8f0;
+      font-size: 13px;
+    }
+
+    .btn-oauth:hover {
+      background-color: #f8fafc;
+      border-color: #cbd5e1;
     }
 
     .status-box {
-      margin-top: 18px;
-      padding: 10px 14px;
-      font-size: 13px;
-      border-radius: 6px;
+      margin-top: 16px;
+      padding: 10px 12px;
+      font-size: 12px;
+      border-radius: 8px;
       display: none;
-      text-align: center;
+      word-break: break-word;
       line-height: 1.4;
     }
 
@@ -165,11 +212,11 @@
 <body>
 
   <div class="auth-card">
-    <h2>Вход в аккаунт</h2>
-    <p class="subtitle">Используйте Supabase Auth для доступа</p>
+    <h2>Supabase Auth & DB</h2>
+    <p class="subtitle">Тестирование двух типов авторизации и OAuth</p>
 
     <div class="input-group">
-      <label for="userEmail">Электронная почта</label>
+      <label for="userEmail">Email / Логин</label>
       <div class="input-wrapper">
         <input id="userEmail" type="email" placeholder="name@example.com" autocomplete="email">
       </div>
@@ -183,9 +230,32 @@
       </div>
     </div>
 
-    <div class="actions">
-      <button class="btn btn-primary" onclick="signInUser()">Войти</button>
-      <button class="btn btn-secondary" onclick="signUpUser()">Создать аккаунт</button>
+    <!-- Тип 1: Стандартная Auth (SignUp / SignIn) -->
+    <div class="section-title">1. Метод Supabase Auth</div>
+    <div class="grid-2">
+      <button class="btn btn-secondary" onclick="authSignUp()">Auth Sign Up</button>
+      <button class="btn btn-primary" onclick="authSignIn()">Auth Sign In</button>
+    </div>
+
+    <!-- Тип 2: Прямая работа с таблицей users (Insert / Select) -->
+    <div class="section-title">2. Метод БД (Insert / Select)</div>
+    <div class="grid-2">
+      <button class="btn btn-db-outline" onclick="dbInsertUser()">DB Insert</button>
+      <button class="btn btn-db" onclick="dbSelectUser()">DB Select (Вход)</button>
+    </div>
+
+    <!-- Тип 3: OAuth Провайдеры -->
+    <div class="section-title">3. Сторонняя авторизация (OAuth)</div>
+    <div class="oauth-container">
+      <button class="btn btn-oauth" onclick="signInWithProvider('google')">
+        Войти с помощью Google
+      </button>
+      <button class="btn btn-oauth" onclick="signInWithProvider('github')">
+        Войти с помощью GitHub
+      </button>
+      <button class="btn btn-oauth" onclick="signInWithProvider('apple')">
+        Войти с помощью Apple
+      </button>
     </div>
 
     <div id="statusMessage" class="status-box"></div>
@@ -205,54 +275,125 @@
     }
 
     function togglePasswordVisibility() {
-      const passInput = document.getElementById('userPassword');
-      const toggleBtn = document.querySelector('.toggle-pass-btn');
-      if (passInput.type === 'password') {
-        passInput.type = 'text';
-        toggleBtn.textContent = 'Скрыть';
+      const pass = document.getElementById('userPassword');
+      const btn = document.querySelector('.toggle-pass-btn');
+      if (pass.type === 'password') {
+        pass.type = 'text';
+        btn.textContent = 'Скрыть';
       } else {
-        passInput.type = 'password';
-        toggleBtn.textContent = 'Показать';
+        pass.type = 'password';
+        btn.textContent = 'Показать';
       }
     }
 
-    async function signUpUser() {
+    function getCredentials() {
       const email = document.getElementById('userEmail').value.trim();
       const password = document.getElementById('userPassword').value.trim();
-
       if (!email || !password) {
-        showStatus('Заполните email и пароль', 'error');
-        return;
+        showStatus('Заполните оба поля (Email/Логин и Пароль)', 'error');
+        return null;
       }
+      return { email, password };
+    }
 
-      showStatus('Регистрируем...', 'success');
+    // --- 1. Supabase Auth ---
+    async function authSignUp() {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Auth: создаем аккаунт...', 'success');
 
-      const { data, error } = await client.auth.signUp({ email, password });
+      const { data, error } = await client.auth.signUp({
+        email: creds.email,
+        password: creds.password
+      });
 
       if (error) {
-        showStatus('Ошибка: ' + error.message, 'error');
+        console.error('[Auth SignUp Error]:', error);
+        showStatus('Ошибка Auth SignUp: ' + error.message, 'error');
       } else {
-        showStatus('Аккаунт успешно создан! Теперь можно войти.', 'success');
+        console.log('[Auth SignUp Success]:', data);
+        showStatus('Успешный SignUp! ID: ' + (data.user?.id || 'создан'), 'success');
       }
     }
 
-    async function signInUser() {
-      const email = document.getElementById('userEmail').value.trim();
-      const password = document.getElementById('userPassword').value.trim();
+    async function authSignIn() {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Auth: вход...', 'success');
 
-      if (!email || !password) {
-        showStatus('Заполните email и пароль', 'error');
-        return;
-      }
-
-      showStatus('Проверяем данные...', 'success');
-
-      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      const { data, error } = await client.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password
+      });
 
       if (error) {
-        showStatus('Ошибка входа: ' + error.message, 'error');
+        console.error('[Auth SignIn Error]:', error);
+        showStatus('Ошибка Auth SignIn: ' + error.message, 'error');
       } else {
-        showStatus('Вы успешно вошли! Добро пожаловать, ' + data.user.email, 'success');
+        console.log('[Auth SignIn Success]:', data);
+        showStatus('Успешный Auth SignIn! Добро пожаловать, ' + data.user.email, 'success');
+      }
+    }
+
+    // --- 2. DB Insert & Select ---
+    async function dbInsertUser() {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('БД: добавление записи через insert()...', 'success');
+
+      // Используем имена колонок name и password в таблице users
+      const { data, error } = await client
+        .from('users')
+        .insert([{ name: creds.email, password: creds.password }])
+        .select('*');
+
+      if (error) {
+        console.error('[DB Insert Error]:', error);
+        showStatus('Ошибка DB Insert: ' + error.message, 'error');
+      } else {
+        console.log('[DB Insert Success]:', data);
+        showStatus('Запись успешно создана в таблице users!', 'success');
+      }
+    }
+
+    async function dbSelectUser() {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('БД: поиск записи через select()...', 'success');
+
+      const { data, error } = await client
+        .from('users')
+        .select('*')
+        .eq('name', creds.email)
+        .eq('password', creds.password);
+
+      if (error) {
+        console.error('[DB Select Error]:', error);
+        showStatus('Ошибка DB Select: ' + error.message, 'error');
+      } else if (!data || data.length === 0) {
+        console.warn('[DB Select]: пользователь не найден');
+        showStatus('Пользователь с такими данными в таблице не найден', 'error');
+      } else {
+        console.log('[DB Select Success]:', data);
+        showStatus('Успешный вход через БД! Найдена запись: ' + data[0].name, 'success');
+      }
+    }
+
+    // --- 3. OAuth Providers ---
+    async function signInWithProvider(providerName) {
+      showStatus(`Перенаправление на ${providerName}...`, 'success');
+
+      const { data, error } = await client.auth.signInWithOAuth({
+        provider: providerName,
+        options: {
+          // Возврат на текущую страницу после подтверждения в Google/GitHub
+          redirectTo: window.location.origin + window.location.pathname
+        }
+      });
+
+      if (error) {
+        console.error(`[OAuth ${providerName} Error]:`, error);
+        showStatus(`Ошибка OAuth (${providerName}): ` + error.message, 'error');
       }
     }
   </script>
