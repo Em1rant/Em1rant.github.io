@@ -260,142 +260,103 @@
 
     <div id="statusMessage" class="status-box"></div>
   </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const client = supabase.createClient(
+    "https://jwylyajcetvgvuqdqnqf.supabase.co",
+    "sb_publishable_9dzgX863H-K9aH6gadGnew_23RKElSh"
+  );
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const client = supabase.createClient(
-      "https://jwylyajcetvgvuqdqnqf.supabase.co",
-      "sb_publishable_9dzgX863H-K9aH6gadGnew_23RKElSh"
-    );
-
-    function showStatus(text, type) {
-      const box = document.getElementById('statusMessage');
-      box.textContent = text;
-      box.className = 'status-box ' + type;
+  // Автоматическая проверка: вошел ли пользователь
+  client.auth.onAuthStateChange((event, session) => {
+    console.log("Auth Event:", event, session);
+    if (session?.user) {
+      showStatus(`Успешный вход через ${session.user.app_metadata.provider || 'email'}! Вы вошли как: ${session.user.email}`, 'success');
+      
+      // Меняем кнопку входа на кнопку "Выйти"
+      const actionArea = document.querySelector('.oauth-container');
+      actionArea.innerHTML = `
+        <button class="btn btn-secondary" style="border-color:#ef4444; color:#ef4444;" onclick="client.auth.signOut().then(() => location.reload())">
+          Выйти из аккаунта (Sign Out)
+        </button>
+      `;
     }
+  });
 
-    function togglePasswordVisibility() {
-      const pass = document.getElementById('userPassword');
-      const btn = document.querySelector('.toggle-pass-btn');
-      if (pass.type === 'password') {
-        pass.type = 'text';
-        btn.textContent = 'Скрыть';
-      } else {
-        pass.type = 'password';
-        btn.textContent = 'Показать';
-      }
+  function showStatus(text, type) {
+    const box = document.getElementById('statusMessage');
+    box.textContent = text;
+    box.className = 'status-box ' + type;
+  }
+
+  function togglePasswordVisibility() {
+    const pass = document.getElementById('userPassword');
+    const btn = document.querySelector('.toggle-pass-btn');
+    if (pass.type === 'password') {
+      pass.type = 'text';
+      btn.textContent = 'Скрыть';
+    } else {
+      pass.type = 'password';
+      btn.textContent = 'Показать';
     }
+  }
 
-    function getCredentials() {
-      const email = document.getElementById('userEmail').value.trim();
-      const password = document.getElementById('userPassword').value.trim();
-      if (!email || !password) {
-        showStatus('Заполните оба поля (Email/Логин и Пароль)', 'error');
-        return null;
-      }
-      return { email, password };
+  function getCredentials() {
+    const email = document.getElementById('userEmail').value.trim();
+    const password = document.getElementById('userPassword').value.trim();
+    if (!email || !password) {
+      showStatus('Заполните оба поля (Email/Логин и Пароль)', 'error');
+      return null;
     }
+    return { email, password };
+  }
 
-    // --- 1. Supabase Auth ---
-    async function authSignUp() {
-      const creds = getCredentials();
-      if (!creds) return;
-      showStatus('Auth: создаем аккаунт...', 'success');
+  async function authSignUp() {
+    const creds = getCredentials();
+    if (!creds) return;
+    showStatus('Auth: создаем аккаунт...', 'success');
+    const { data, error } = await client.auth.signUp({ email: creds.email, password: creds.password });
+    if (error) showStatus('Ошибка Auth SignUp: ' + error.message, 'error');
+    else showStatus('Успешный SignUp! ID: ' + (data.user?.id || 'создан'), 'success');
+  }
 
-      const { data, error } = await client.auth.signUp({
-        email: creds.email,
-        password: creds.password
-      });
+  async function authSignIn() {
+    const creds = getCredentials();
+    if (!creds) return;
+    showStatus('Auth: вход...', 'success');
+    const { data, error } = await client.auth.signInWithPassword({ email: creds.email, password: creds.password });
+    if (error) showStatus('Ошибка Auth SignIn: ' + error.message, 'error');
+    else showStatus('Успешный Auth SignIn! ' + data.user.email, 'success');
+  }
 
-      if (error) {
-        console.error('[Auth SignUp Error]:', error);
-        showStatus('Ошибка Auth SignUp: ' + error.message, 'error');
-      } else {
-        console.log('[Auth SignUp Success]:', data);
-        showStatus('Успешный SignUp! ID: ' + (data.user?.id || 'создан'), 'success');
-      }
-    }
+  async function dbInsertUser() {
+    const creds = getCredentials();
+    if (!creds) return;
+    showStatus('БД: запись через insert()...', 'success');
+    const { data, error } = await client.from('users').insert([{ name: creds.email, password: creds.password }]).select('*');
+    if (error) showStatus('Ошибка DB Insert: ' + error.message, 'error');
+    else showStatus('Запись сохранена в таблице users!', 'success');
+  }
 
-    async function authSignIn() {
-      const creds = getCredentials();
-      if (!creds) return;
-      showStatus('Auth: вход...', 'success');
+  async function dbSelectUser() {
+    const creds = getCredentials();
+    if (!creds) return;
+    showStatus('БД: поиск через select()...', 'success');
+    const { data, error } = await client.from('users').select('*').eq('name', creds.email).eq('password', creds.password);
+    if (error) showStatus('Ошибка DB Select: ' + error.message, 'error');
+    else if (!data || data.length === 0) showStatus('Пользователь не найден в таблице', 'error');
+    else showStatus('Вход выполнен через БД! Найдена запись: ' + data[0].name, 'success');
+  }
 
-      const { data, error } = await client.auth.signInWithPassword({
-        email: creds.email,
-        password: creds.password
-      });
-
-      if (error) {
-        console.error('[Auth SignIn Error]:', error);
-        showStatus('Ошибка Auth SignIn: ' + error.message, 'error');
-      } else {
-        console.log('[Auth SignIn Success]:', data);
-        showStatus('Успешный Auth SignIn! Добро пожаловать, ' + data.user.email, 'success');
-      }
-    }
-
-    // --- 2. DB Insert & Select ---
-    async function dbInsertUser() {
-      const creds = getCredentials();
-      if (!creds) return;
-      showStatus('БД: добавление записи через insert()...', 'success');
-
-      // Используем имена колонок name и password в таблице users
-      const { data, error } = await client
-        .from('users')
-        .insert([{ name: creds.email, password: creds.password }])
-        .select('*');
-
-      if (error) {
-        console.error('[DB Insert Error]:', error);
-        showStatus('Ошибка DB Insert: ' + error.message, 'error');
-      } else {
-        console.log('[DB Insert Success]:', data);
-        showStatus('Запись успешно создана в таблице users!', 'success');
-      }
-    }
-
-    async function dbSelectUser() {
-      const creds = getCredentials();
-      if (!creds) return;
-      showStatus('БД: поиск записи через select()...', 'success');
-
-      const { data, error } = await client
-        .from('users')
-        .select('*')
-        .eq('name', creds.email)
-        .eq('password', creds.password);
-
-      if (error) {
-        console.error('[DB Select Error]:', error);
-        showStatus('Ошибка DB Select: ' + error.message, 'error');
-      } else if (!data || data.length === 0) {
-        console.warn('[DB Select]: пользователь не найден');
-        showStatus('Пользователь с такими данными в таблице не найден', 'error');
-      } else {
-        console.log('[DB Select Success]:', data);
-        showStatus('Успешный вход через БД! Найдена запись: ' + data[0].name, 'success');
-      }
-    }
-
-    // --- 3. OAuth Providers ---
-    async function signInWithProvider(providerName) {
-      showStatus(`Перенаправление на ${providerName}...`, 'success');
-
-      const { data, error } = await client.auth.signInWithOAuth({
-        provider: providerName,
-        options: {
-          // Возврат на текущую страницу после подтверждения в Google/GitHub
-          redirectTo: window.location.origin + window.location.pathname
-        }
-      });
-
-      if (error) {
-        console.error(`[OAuth ${providerName} Error]:`, error);
-        showStatus(`Ошибка OAuth (${providerName}): ` + error.message, 'error');
-      }
-    }
-  </script>
+  async function signInWithProvider(providerName) {
+    showStatus(`Перенаправление на ${providerName}...`, 'success');
+    const { error } = await client.auth.signInWithOAuth({
+      provider: providerName,
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) showStatus(`Ошибка OAuth: ${error.message}`, 'error');
+  }
+</script>
+  
 </body>
 </html>
