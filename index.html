@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Auth & Firestore</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      padding: 24px;
+    }
+
+    .card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 440px;
+      padding: 32px 28px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f172a;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #475569;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      color: #0f172a;
+      background-color: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .input-wrapper input:focus {
+      background-color: #ffffff;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+    }
+
+    .toggle-pass-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      padding: 4px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 11px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background-color: #d97706;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: #b45309;
+    }
+
+    .btn-secondary {
+      background-color: #fef3c7;
+      color: #92400e;
+      border-color: #fde68a;
+    }
+
+    .btn-secondary:hover {
+      background-color: #fde68a;
+    }
+
+    .btn-db {
+      background-color: #0f766e;
+      color: #ffffff;
+    }
+
+    .btn-db:hover {
+      background-color: #115e59;
+    }
+
+    .btn-db-outline {
+      background-color: #f0fdfa;
+      color: #0f766e;
+      border-color: #99f6e4;
+    }
+
+    .btn-db-outline:hover {
+      background-color: #ccfbf1;
+    }
+
+    .oauth-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-oauth {
+      background-color: #ffffff;
+      color: #1e293b;
+      border: 1.5px solid #e2e8f0;
+    }
+
+    .btn-oauth:hover {
+      background-color: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .btn-logout {
+      margin-top: 24px;
+      background-color: #ef4444;
+      color: #ffffff;
+    }
+
+    .btn-logout:hover {
+      background-color: #dc2626;
+    }
+
+    .status-box {
+      margin-top: 16px;
+      padding: 10px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+      display: none;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .status-box.error {
+      display: block;
+      background-color: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .status-box.success {
+      display: block;
+      background-color: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .user-info-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 999px;
+      background: #fef3c7;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ЭКРАН 1: ФОРМА ВХОДА И РЕГИСТРАЦИИ -->
+  <div id="authView" class="card">
+    <h2>Firebase Auth & Firestore</h2>
+    <p class="subtitle">Вход и регистрация</p>
+
+    <div class="input-group">
+      <label for="userEmail">Email / Логин</label>
+      <div class="input-wrapper">
+        <input id="userEmail" type="email" placeholder="name@example.com" autocomplete="email">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label for="userPassword">Пароль</label>
+      <div class="input-wrapper">
+        <input id="userPassword" type="password" placeholder="Минимум 6 символов" autocomplete="current-password">
+        <button type="button" class="toggle-pass-btn" id="togglePassBtn">Показать</button>
+      </div>
+    </div>
+
+    <div class="section-title">1. Метод Firebase Auth</div>
+    <div class="grid-2">
+      <button class="btn btn-secondary" id="btnAuthSignUp">Auth Sign Up</button>
+      <button class="btn btn-primary" id="btnAuthSignIn">Auth Sign In</button>
+    </div>
+
+    <div class="section-title">2. Метод БД Firestore (Add / Get)</div>
+    <div class="grid-2">
+      <button class="btn btn-db-outline" id="btnDbInsert">Firestore Add</button>
+      <button class="btn btn-db" id="btnDbSelect">Firestore Get (Вход)</button>
+    </div>
+
+    <div class="section-title">3. Сторонняя авторизация (OAuth)</div>
+    <div class="oauth-container">
+      <button class="btn btn-oauth" id="btnGoogle">Войти с помощью Google</button>
+      <button class="btn btn-oauth" id="btnGithub">Войти с помощью GitHub</button>
+    </div>
+
+    <div id="statusMessage" class="status-box"></div>
+  </div>
+
+  <!-- ЭКРАН 2: СТРАНИЦА ПОСЛЕ ВХОДА -->
+  <div id="dashboardView" class="card hidden">
+    <h2>Вы зашли!</h2>
+    <p class="subtitle">Авторизация через Firebase успешно выполнена</p>
+
+    <div class="user-info-box">
+      <div><strong>Пользователь:</strong> <span id="loggedUserEmail">—</span></div>
+      <div><strong>Способ входа:</strong> <span id="loggedMethod" class="badge">—</span></div>
+      <div><strong>UID / Документ:</strong> <span id="loggedUserId" style="font-size: 11px; color: #64748b;">—</span></div>
+    </div>
+
+    <button class="btn btn-logout" id="btnLogout">Выйти</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      GoogleAuthProvider,
+      GithubAuthProvider,
+      signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      where
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5uMPZRnUW3uqXg7wLJGQXzkLAzfhLyCE",
+      authDomain: "fir-mobile-develop.firebaseapp.com",
+      projectId: "fir-mobile-develop",
+      storageBucket: "fir-mobile-develop.firebasestorage.app",
+      messagingSenderId: "871150128401",
+      appId: "1:871150128401:web:921e3237f7d6daeeced0b0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let isSigningUp = false;
+
+    function openDashboard(email, method, id) {
+      document.getElementById('loggedUserEmail').textContent = email;
+      document.getElementById('loggedMethod').textContent = method;
+      document.getElementById('loggedUserId').textContent = id;
+
+      document.getElementById('authView').classList.add('hidden');
+      document.getElementById('dashboardView').classList.remove('hidden');
+    }
+
+    function openAuthScreen() {
+      document.getElementById('dashboardView').classList.add('hidden');
+      document.getElementById('authView').classList.remove('hidden');
+      document.getElementById('statusMessage').className = 'status-box';
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      console.log("[Firebase Auth State]:", user);
+      if (isSigningUp) return;
+
+      if (user) {
+        const provider = user.providerData[0]?.providerId || 'password';
+        openDashboard(user.email, `Firebase Auth (${provider})`, user.uid);
+      }
+    });
+
+    function showStatus(text, type) {
+      const box = document.getElementById('statusMessage');
+      box.textContent = text;
+      box.className = 'status-box ' + type;
+    }
+
+    function getCredentials() {
+      const email = document.getElementById('userEmail').value.trim();
+      const password = document.getElementById('userPassword').value.trim();
+      if (!email || !password) {
+        showStatus('Заполните оба поля (Email/Логин и Пароль)', 'error');
+        return null;
+      }
+      return { email, password };
+    }
+
+    document.getElementById('togglePassBtn').addEventListener('click', () => {
+      const pass = document.getElementById('userPassword');
+      const btn = document.getElementById('togglePassBtn');
+      if (pass.type === 'password') {
+        pass.type = 'text';
+        btn.textContent = 'Скрыть';
+      } else {
+        pass.type = 'password';
+        btn.textContent = 'Показать';
+      }
+    });
+
+    // --- 1. Firebase Auth (SignUp / SignIn) ---
+    document.getElementById('btnAuthSignUp').addEventListener('click', async () => {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Создание пользователя в Firebase Auth...', 'success');
+
+      try {
+        isSigningUp = true;
+        const userCredential = await createUserWithEmailAndPassword(auth, creds.email, creds.password);
+        console.log("[Firebase SignUp]:", userCredential.user);
+        await signOut(auth);
+        isSigningUp = false;
+        showStatus('Аккаунт создан в Firebase Auth! Теперь нажмите Auth Sign In.', 'success');
+      } catch (error) {
+        isSigningUp = false;
+        showStatus('Ошибка SignUp: ' + error.message, 'error');
+      }
+    });
+
+    document.getElementById('btnAuthSignIn').addEventListener('click', async () => {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Вход через Firebase Auth...', 'success');
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, creds.email, creds.password);
+        console.log("[Firebase SignIn]:", userCredential.user);
+      } catch (error) {
+        showStatus('Ошибка входа: ' + error.message, 'error');
+      }
+    });
+
+    // --- 2. Firestore DB (Add / Get) ---
+    document.getElementById('btnDbInsert').addEventListener('click', async () => {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Запись документа в коллекцию users...', 'success');
+
+      try {
+        const docRef = await addDoc(collection(db, "users"), {
+          name: creds.email,
+          password: creds.password
+        });
+        console.log("[Firestore Add]:", docRef.id);
+        showStatus(`Документ записан в Firestore (ID: ${docRef.id})! Нажмите Firestore Get для входа.`, 'success');
+      } catch (error) {
+        showStatus('Ошибка Firestore (addDoc): ' + error.message, 'error');
+      }
+    });
+
+    document.getElementById('btnDbSelect').addEventListener('click', async () => {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Поиск документа в коллекции users...', 'success');
+
+      try {
+        const q = query(
+          collection(db, "users"),
+          where("name", "==", creds.email),
+          where("password", "==", creds.password)
+        );
+        const querySnapshot = await getDocs(q);
+        console.log("[Firestore Get]:", querySnapshot.docs.map(d => d.data()));
+
+        if (querySnapshot.empty) {
+          showStatus('Документ не найден в коллекции users', 'error');
+        } else {
+          const firstDoc = querySnapshot.docs[0];
+          openDashboard(firstDoc.data().name, 'Firestore DB (getDocs)', `Doc ID: ${firstDoc.id}`);
+        }
+      } catch (error) {
+        showStatus('Ошибка Firestore (getDocs): ' + error.message, 'error');
+      }
+    });
+
+    // --- 3. OAuth Providers (Popup) ---
+    async function loginWithPopup(provider) {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        console.log("[Firebase OAuth]:", result.user);
+      } catch (error) {
+        showStatus('Ошибка OAuth: ' + error.message, 'error');
+      }
+    }
+
+    document.getElementById('btnGoogle').addEventListener('click', () => {
+      loginWithPopup(new GoogleAuthProvider());
+    });
+
+    document.getElementById('btnGithub').addEventListener('click', () => {
+      loginWithPopup(new GithubAuthProvider());
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', async () => {
+      await signOut(auth);
+      openAuthScreen();
+    });
+  </script>
+</body>
+</html>
