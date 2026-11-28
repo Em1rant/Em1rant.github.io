@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Supabase Auth & DB Demo</title>
+  <title>Supabase Auth & DB</title>
   <style>
     * {
       box-sizing: border-box;
@@ -21,7 +21,7 @@
       padding: 24px;
     }
 
-    .auth-card {
+    .card {
       background: #ffffff;
       width: 100%;
       max-width: 440px;
@@ -30,12 +30,16 @@
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
     }
 
-    .auth-card h2 {
+    .hidden {
+      display: none !important;
+    }
+
+    h2 {
       font-size: 22px;
       font-weight: 700;
       color: #0f172a;
       text-align: center;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
     .subtitle {
@@ -46,7 +50,7 @@
     }
 
     .section-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -114,7 +118,8 @@
     }
 
     .btn {
-      padding: 10px;
+      width: 100%;
+      padding: 11px;
       font-size: 13px;
       font-weight: 600;
       border-radius: 8px;
@@ -168,7 +173,7 @@
     .oauth-container {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       margin-top: 8px;
     }
 
@@ -176,12 +181,21 @@
       background-color: #ffffff;
       color: #1e293b;
       border: 1.5px solid #e2e8f0;
-      font-size: 13px;
     }
 
     .btn-oauth:hover {
       background-color: #f8fafc;
       border-color: #cbd5e1;
+    }
+
+    .btn-logout {
+      margin-top: 24px;
+      background-color: #ef4444;
+      color: #ffffff;
+    }
+
+    .btn-logout:hover {
+      background-color: #dc2626;
     }
 
     .status-box {
@@ -207,13 +221,35 @@
       color: #15803d;
       border: 1px solid #bbf7d0;
     }
+
+    .user-info-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1e40af;
+    }
   </style>
 </head>
 <body>
 
-  <div class="auth-card">
+  <!-- ЭКРАН 1: ФОРМА ВХОДА И РЕГИСТРАЦИИ -->
+  <div id="authView" class="card">
     <h2>Supabase Auth & DB</h2>
-    <p class="subtitle">Тестирование двух типов авторизации и OAuth</p>
+    <p class="subtitle">Вход и регистрация</p>
 
     <div class="input-group">
       <label for="userEmail">Email / Логин</label>
@@ -230,21 +266,18 @@
       </div>
     </div>
 
-    <!-- Тип 1: Стандартная Auth (SignUp / SignIn) -->
     <div class="section-title">1. Метод Supabase Auth</div>
     <div class="grid-2">
       <button class="btn btn-secondary" onclick="authSignUp()">Auth Sign Up</button>
       <button class="btn btn-primary" onclick="authSignIn()">Auth Sign In</button>
     </div>
 
-    <!-- Тип 2: Прямая работа с таблицей users (Insert / Select) -->
     <div class="section-title">2. Метод БД (Insert / Select)</div>
     <div class="grid-2">
       <button class="btn btn-db-outline" onclick="dbInsertUser()">DB Insert</button>
       <button class="btn btn-db" onclick="dbSelectUser()">DB Select (Вход)</button>
     </div>
 
-    <!-- Тип 3: OAuth Провайдеры -->
     <div class="section-title">3. Сторонняя авторизация (OAuth)</div>
     <div class="oauth-container">
       <button class="btn btn-oauth" onclick="signInWithProvider('google')">
@@ -253,110 +286,184 @@
       <button class="btn btn-oauth" onclick="signInWithProvider('github')">
         Войти с помощью GitHub
       </button>
-      <button class="btn btn-oauth" onclick="signInWithProvider('apple')">
-        Войти с помощью Apple
-      </button>
     </div>
 
     <div id="statusMessage" class="status-box"></div>
   </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const client = supabase.createClient(
-    "https://jwylyajcetvgvuqdqnqf.supabase.co",
-    "sb_publishable_9dzgX863H-K9aH6gadGnew_23RKElSh"
-  );
 
-  // Автоматическая проверка: вошел ли пользователь
-  client.auth.onAuthStateChange((event, session) => {
-    console.log("Auth Event:", event, session);
-    if (session?.user) {
-      showStatus(`Успешный вход через ${session.user.app_metadata.provider || 'email'}! Вы вошли как: ${session.user.email}`, 'success');
-      
-      // Меняем кнопку входа на кнопку "Выйти"
-      const actionArea = document.querySelector('.oauth-container');
-      actionArea.innerHTML = `
-        <button class="btn btn-secondary" style="border-color:#ef4444; color:#ef4444;" onclick="client.auth.signOut().then(() => location.reload())">
-          Выйти из аккаунта (Sign Out)
-        </button>
-      `;
+  <!-- ЭКРАН 2: СТРАНИЦА ПОСЛЕ ВХОДА -->
+  <div id="dashboardView" class="card hidden">
+    <h2>Вы зашли!</h2>
+    <p class="subtitle">Авторизация через Supabase успешно выполнена</p>
+
+    <div class="user-info-box">
+      <div><strong>Пользователь:</strong> <span id="loggedUserEmail">—</span></div>
+      <div><strong>Способ входа:</strong> <span id="loggedMethod" class="badge">—</span></div>
+      <div><strong>ID в Supabase:</strong> <span id="loggedUserId" style="font-size: 11px; color: #64748b;">—</span></div>
+    </div>
+
+    <button class="btn btn-logout" onclick="logoutUser()">Выйти</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const client = supabase.createClient(
+      "https://jwylyajcetvgvuqdqnqf.supabase.co",
+      "sb_publishable_9dzgX863H-K9aH6gadGnew_23RKElSh"
+    );
+
+    let isSigningUp = false;
+
+    function openDashboard(email, method, id) {
+      document.getElementById('loggedUserEmail').textContent = email;
+      document.getElementById('loggedMethod').textContent = method;
+      document.getElementById('loggedUserId').textContent = id || 'Запись из таблицы public.users';
+
+      document.getElementById('authView').classList.add('hidden');
+      document.getElementById('dashboardView').classList.remove('hidden');
     }
-  });
 
-  function showStatus(text, type) {
-    const box = document.getElementById('statusMessage');
-    box.textContent = text;
-    box.className = 'status-box ' + type;
-  }
-
-  function togglePasswordVisibility() {
-    const pass = document.getElementById('userPassword');
-    const btn = document.querySelector('.toggle-pass-btn');
-    if (pass.type === 'password') {
-      pass.type = 'text';
-      btn.textContent = 'Скрыть';
-    } else {
-      pass.type = 'password';
-      btn.textContent = 'Показать';
+    function openAuthScreen() {
+      document.getElementById('dashboardView').classList.add('hidden');
+      document.getElementById('authView').classList.remove('hidden');
+      document.getElementById('statusMessage').className = 'status-box';
     }
-  }
 
-  function getCredentials() {
-    const email = document.getElementById('userEmail').value.trim();
-    const password = document.getElementById('userPassword').value.trim();
-    if (!email || !password) {
-      showStatus('Заполните оба поля (Email/Логин и Пароль)', 'error');
-      return null;
-    }
-    return { email, password };
-  }
+    client.auth.onAuthStateChange((event, session) => {
+      console.log("[Supabase Auth Event]:", event, session);
+      if (isSigningUp) return;
 
-  async function authSignUp() {
-    const creds = getCredentials();
-    if (!creds) return;
-    showStatus('Auth: создаем аккаунт...', 'success');
-    const { data, error } = await client.auth.signUp({ email: creds.email, password: creds.password });
-    if (error) showStatus('Ошибка Auth SignUp: ' + error.message, 'error');
-    else showStatus('Успешный SignUp! ID: ' + (data.user?.id || 'создан'), 'success');
-  }
-
-  async function authSignIn() {
-    const creds = getCredentials();
-    if (!creds) return;
-    showStatus('Auth: вход...', 'success');
-    const { data, error } = await client.auth.signInWithPassword({ email: creds.email, password: creds.password });
-    if (error) showStatus('Ошибка Auth SignIn: ' + error.message, 'error');
-    else showStatus('Успешный Auth SignIn! ' + data.user.email, 'success');
-  }
-
-  async function dbInsertUser() {
-    const creds = getCredentials();
-    if (!creds) return;
-    showStatus('БД: запись через insert()...', 'success');
-    const { data, error } = await client.from('users').insert([{ name: creds.email, password: creds.password }]).select('*');
-    if (error) showStatus('Ошибка DB Insert: ' + error.message, 'error');
-    else showStatus('Запись сохранена в таблице users!', 'success');
-  }
-
-  async function dbSelectUser() {
-    const creds = getCredentials();
-    if (!creds) return;
-    showStatus('БД: поиск через select()...', 'success');
-    const { data, error } = await client.from('users').select('*').eq('name', creds.email).eq('password', creds.password);
-    if (error) showStatus('Ошибка DB Select: ' + error.message, 'error');
-    else if (!data || data.length === 0) showStatus('Пользователь не найден в таблице', 'error');
-    else showStatus('Вход выполнен через БД! Найдена запись: ' + data[0].name, 'success');
-  }
-
-  async function signInWithProvider(providerName) {
-    showStatus(`Перенаправление на ${providerName}...`, 'success');
-    const { error } = await client.auth.signInWithOAuth({
-      provider: providerName,
-      options: { redirectTo: window.location.origin + window.location.pathname }
+      if (session?.user) {
+        const provider = session.user.app_metadata?.provider || 'email';
+        openDashboard(session.user.email, `Supabase Auth (${provider})`, session.user.id);
+      }
     });
-    if (error) showStatus(`Ошибка OAuth: ${error.message}`, 'error');
-  }
-</script>
-  
+
+    async function logoutUser() {
+      await client.auth.signOut();
+      if (window.location.hash) {
+        history.replaceState(null, null, ' ');
+      }
+      openAuthScreen();
+    }
+
+    function showStatus(text, type) {
+      const box = document.getElementById('statusMessage');
+      box.textContent = text;
+      box.className = 'status-box ' + type;
+    }
+
+    function togglePasswordVisibility() {
+      const pass = document.getElementById('userPassword');
+      const btn = document.querySelector('.toggle-pass-btn');
+      if (pass.type === 'password') {
+        pass.type = 'text';
+        btn.textContent = 'Скрыть';
+      } else {
+        pass.type = 'password';
+        btn.textContent = 'Показать';
+      }
+    }
+
+    function getCredentials() {
+      const email = document.getElementById('userEmail').value.trim();
+      const password = document.getElementById('userPassword').value.trim();
+      if (!email || !password) {
+        showStatus('Заполните оба поля (Email/Логин и Пароль)', 'error');
+        return null;
+      }
+      return { email, password };
+    }
+
+    // --- 1. Supabase Auth ---
+    async function authSignUp() {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Отправка запроса signUp в Supabase...', 'success');
+
+      isSigningUp = true;
+      const { data, error } = await client.auth.signUp({
+        email: creds.email,
+        password: creds.password
+      });
+
+      console.log("[SignUp Response]:", { data, error });
+      if (error) {
+        isSigningUp = false;
+        showStatus('Ошибка SignUp: ' + error.message, 'error');
+        return;
+      }
+
+      await client.auth.signOut();
+      isSigningUp = false;
+      showStatus('Аккаунт создан в auth.users! Теперь нажмите Auth Sign In.', 'success');
+    }
+
+    async function authSignIn() {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Проверка данных через signInWithPassword...', 'success');
+
+      const { data, error } = await client.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password
+      });
+
+      console.log("[SignIn Response]:", { data, error });
+      if (error) {
+        showStatus('Ошибка входа: ' + error.message, 'error');
+      }
+    }
+
+    // --- 2. DB Insert & Select ---
+    async function dbInsertUser() {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Запись строки в таблицу users...', 'success');
+
+      const { data, error } = await client
+        .from('users')
+        .insert([{ name: creds.email, password: creds.password }])
+        .select('*');
+
+      console.log("[DB Insert Response]:", { data, error });
+      if (error) {
+        showStatus('Ошибка БД (insert): ' + error.message, 'error');
+      } else {
+        showStatus(`Успешно записано в таблицу users (ID строки: ${data[0].id})! Нажмите DB Select для входа.`, 'success');
+      }
+    }
+
+    async function dbSelectUser() {
+      const creds = getCredentials();
+      if (!creds) return;
+      showStatus('Поиск строки в таблице users...', 'success');
+
+      const { data, error } = await client
+        .from('users')
+        .select('*')
+        .eq('name', creds.email)
+        .eq('password', creds.password);
+
+      console.log("[DB Select Response]:", { data, error });
+      if (error) {
+        showStatus('Ошибка БД (select): ' + error.message, 'error');
+      } else if (!data || data.length === 0) {
+        showStatus('Запись не найдена в таблице users (проверьте логин/пароль или RLS-политики)', 'error');
+      } else {
+        openDashboard(data[0].name, 'Таблица БД (SELECT)', `Строка #${data[0].id}`);
+      }
+    }
+
+    // --- 3. OAuth Providers ---
+    async function signInWithProvider(providerName) {
+      showStatus(`Перенаправление на ${providerName}...`, 'success');
+      const { error } = await client.auth.signInWithOAuth({
+        provider: providerName,
+        options: { redirectTo: window.location.origin + window.location.pathname }
+      });
+      if (error) showStatus(`Ошибка OAuth: ${error.message}`, 'error');
+    }
+  </script>
 </body>
 </html>
